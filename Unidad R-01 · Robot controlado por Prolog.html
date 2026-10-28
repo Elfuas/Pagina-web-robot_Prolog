@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Unidad R-01 · Robot controlado por Prolog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050506;--panel:#0d0d10;--ink:#eceef2;--mut:#8b8f99;--red:#ff2a14;--line:#26262c;--code:#08080a;--ok:#7be0a8;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Chakra Petch",system-ui,sans-serif}
+main{max-width:1080px;margin:0 auto;padding:18px 16px 28px}
+h1{font-size:1.7rem;font-weight:600;margin:0;letter-spacing:.01em}
+.sub{color:var(--mut);margin:4px 0 16px;max-width:60ch}
+.grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:16px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.stage{position:relative;height:520px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:radial-gradient(ellipse at 50% 55%,#1a0b0a 0,#050506 70%)}
+.floor{position:absolute;left:0;right:0;bottom:34px;height:1px;background:linear-gradient(90deg,transparent,var(--red),transparent);box-shadow:0 0 18px 2px rgba(255,42,20,.45)}
+#robot{position:absolute;left:50%;bottom:8px;width:220px;margin-left:-110px}
+#robot svg{width:220px;height:480px;overflow:visible;display:block}
+#zzz{position:absolute;top:30px;font-size:1.5rem;opacity:0;color:var(--red)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px}
+h2{font-size:1rem;font-weight:600;margin:0 0 8px}
+textarea{width:100%;height:300px;font:12.5px/1.5 "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;background:var(--code);color:#d7dae2;border:1px solid var(--line);border-radius:4px;padding:10px;resize:vertical}
+input{flex:1;min-width:0;font:inherit;padding:9px 10px;border-radius:4px;border:1px solid var(--line);background:var(--code);color:var(--ink)}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#14141a;color:var(--ink);padding:6px 11px;border-radius:4px}
+button:hover{border-color:var(--red)}
+button.p{background:var(--red);border-color:var(--red);color:#fff}
+:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.row{display:flex;gap:8px;margin:10px 0}
+#btns{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+#log{height:170px;overflow:auto;background:var(--code);border:1px solid var(--line);border-radius:4px;padding:8px 10px;font:12.5px/1.5 "JetBrains Mono",ui-monospace,monospace}
+.q{color:#9db4ff}.ok{color:var(--ok)}.no{color:var(--red)}
+small{color:var(--mut)}
+code{font-family:"JetBrains Mono",monospace;font-size:.9em;color:#ffb3a8}
+.col{display:flex;flex-direction:column;gap:16px}
+</style>
+</head>
+<body>
+<main>
+<h1>Unidad R-01</h1>
+<p class="sub">Un robot que obedece a Prolog: cada instrucción se reconoce con hechos y reglas, y luego se ejecuta como movimiento.</p>
+<div class="grid">
+  <section class="panel">
+    <div class="stage" id="stage">
+      <div class="floor"></div>
+      <div id="zzz">z z z</div>
+      <div id="robot">
+      <svg viewBox="0 0 200 440" role="img" aria-label="Robot blanco con núcleo rojo brillante">
+        <defs>
+          <linearGradient id="wh" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#b9bcc4"/></linearGradient>
+          <linearGradient id="bk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a4a52"/><stop offset="1" stop-color="#101012"/></linearGradient>
+          <radialGradient id="core" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#ff8a6a"/><stop offset=".5" stop-color="#ff2a14"/><stop offset="1" stop-color="#7a0600"/></radialGradient>
+          <g id="arm">
+            <circle cx="-4" cy="0" r="13" fill="url(#bk)"/><circle cx="-4" cy="0" r="6" fill="#222" stroke="#666" stroke-width="1.5"/>
+            <path d="M-14 8 Q-18 40 -16 62 L2 62 Q4 36 2 10 Z" fill="url(#wh)"/>
+            <rect x="-18" y="60" width="22" height="16" rx="4" fill="url(#bk)"/>
+            <path d="M-17 76 L1 76 L-1 128 L-14 128 Z" fill="url(#wh)"/>
+            <path d="M-17 76 L-9 76 L-8 126 L-14 126 Z" fill="url(#bk)"/>
+            <path d="M-16 128 L0 128 L2 150 L-6 156 L-14 148 Z" fill="url(#bk)"/>
+          </g>
+          <g id="leg">
+            <path d="M-20 0 L22 0 L18 100 L-16 100 Z" fill="url(#wh)"/>
+            <path d="M-20 0 L-8 0 L-6 100 L-16 100 Z" fill="#d9dbe0"/>
+            <rect x="-14" y="98" width="30" height="14" rx="4" fill="url(#bk)"/>
+            <path d="M-13 112 L15 112 L13 150 L-11 150 Z" fill="url(#wh)"/>
+            <path d="M-14 148 L16 148 L20 160 L-18 160 Z" fill="url(#bk)"/>
+          </g>
+        </defs>
+
+        <g id="figure" style="transform-origin:100px 430px">
+          <!-- piernas -->
+          <g transform="translate(82 285)"><g id="legL" style="transform-origin:0 0"><use href="#leg"/></g></g>
+          <g transform="translate(118 285)"><g id="legR" style="transform-origin:0 0"><use href="#leg"/></g></g>
+          <!-- cadera -->
+          <path d="M66 262 L134 262 L130 296 Q100 308 70 296 Z" fill="url(#wh)"/>
+          <path d="M64 268 L76 266 L78 284 L68 288 Z M136 268 L124 266 L122 284 L132 288 Z" fill="#ff2a14"/>
+          <!-- torso -->
+          <g id="body" style="transform-origin:100px 280px">
+            <path d="M72 188 L128 188 L120 240 L126 268 L74 268 L80 240 Z" fill="url(#wh)"/>
+            <path d="M76 196 L124 196 L116 262 L84 262 Z" fill="#17171a" stroke="#555" stroke-width="2"/>
+            <path d="M82 202 L118 202 L112 256 L88 256 Z" fill="#2a0a08"/>
+            <g id="coreG" style="transform-origin:100px 230px">
+              <path d="M86 206 L114 206 L108 250 L92 250 Z" fill="url(#core)" style="filter:drop-shadow(0 0 9px #ff2a14)"/>
+              <path d="M94 214 L106 214 L103 236 L97 236 Z" fill="#ffb09c" opacity=".55"/>
+            </g>
+            <path d="M86 244 L114 244 M88 252 L112 252" stroke="#444" stroke-width="3"/>
+            <path d="M60 144 Q100 128 140 144 L136 196 Q100 222 64 196 Z" fill="url(#wh)"/>
+            <path d="M84 158 Q100 168 116 158" stroke="#aaa" stroke-width="1.5" fill="none"/>
+            <path d="M92 172 Q100 190 108 172 Z" fill="none"/>
+            <path d="M92 138 L108 138 L104 150 L96 150 Z" fill="#ff2a14"/>
+            <path d="M96 146 L104 146 L100 154 Z" fill="#fff" opacity=".8"/>
+            <!-- brazos -->
+            <g transform="translate(56 150)"><g id="armL" style="transform-origin:0 0"><use href="#arm"/></g></g>
+            <g transform="translate(144 150)"><g id="armR" style="transform-origin:0 0"><use href="#arm" transform="scale(-1 1)"/></g></g>
+          </g>
+          <!-- cuello y cabeza -->
+          <path d="M90 118 L110 118 L112 142 L88 142 Z" fill="url(#bk)"/>
+          <path d="M88 130 L112 130 L112 138 L88 138 Z" fill="#ff2a14" opacity=".7"/>
+          <g id="head" style="transform-origin:100px 118px">
+            <path d="M58 56 Q100 10 142 56 L146 120 L132 134 L68 134 L54 120 Z" fill="url(#wh)"/>
+            <path d="M64 70 L78 66 L78 128 L62 130 Z M136 70 L122 66 L122 128 L138 130 Z" fill="#ff2a14" style="filter:drop-shadow(0 0 6px #ff2a14)"/>
+            <path d="M74 60 Q100 52 126 60 L124 128 Q100 138 76 128 Z" fill="#e4e5e9"/>
+            <path d="M64 50 Q100 18 136 50 L136 74 L124 76 L124 60 Q100 46 76 60 L76 76 L64 74 Z" fill="url(#wh)"/>
+            <path d="M78 60 Q100 44 122 60 M100 36 L100 56" stroke="#cfd1d6" stroke-width="1.5" fill="none"/>
+            <g id="eyes" style="transform-origin:100px 84px">
+              <ellipse cx="88" cy="84" rx="8" ry="6" fill="#fff" stroke="#555" stroke-width="2"/>
+              <ellipse cx="112" cy="84" rx="8" ry="6" fill="#fff" stroke="#555" stroke-width="2"/>
+              <path d="M78 79 L86 76 M122 79 L114 76" stroke="#222" stroke-width="1.5"/>
+              <ellipse id="eyeGlowL" cx="88" cy="84" rx="4" ry="3" fill="#ff2a14" opacity="0"/>
+              <ellipse id="eyeGlowR" cx="112" cy="84" rx="4" ry="3" fill="#ff2a14" opacity="0"/>
+            </g>
+            <path d="M97 104 L103 104 L100 108 Z" fill="#fff"/>
+          </g>
+        </g>
+      </svg>
+      </div>
+    </div>
+    <div id="btns"></div>
+    <div class="row">
+      <input id="cmd" placeholder="avanzar, saludar, rutina_demo" autocomplete="off" aria-label="Instrucciones">
+      <button class="p" id="go">Ejecutar</button>
+    </div>
+    <small>Encadena instrucciones con comas o espacios. Acepta sinónimos como <code>hola</code> o <code>adelante</code> y rutinas completas.</small>
+  </section>
+
+  <div class="col">
+    <section class="panel">
+      <h2>Programa Prolog (editable)</h2>
+      <textarea id="prog" spellcheck="false" aria-label="Programa Prolog"></textarea>
+      <div class="row"><button class="p" id="reload">Cargar programa</button><button id="reset">Restaurar</button></div>
+      <small>Agrega un hecho <code>comando(nombre, accion, parametro).</code> y aparecerá un botón nuevo.</small>
+    </section>
+    <section class="panel">
+      <h2>Consultas de Prolog</h2>
+      <div id="log" role="log"></div>
+    </section>
+  </div>
+</div>
+</main>
+
+<script>
+const PROGRAMA = `% HECHOS: comando(Nombre, Accion, Parametro)
+comando(avanzar, mover, 70).
+comando(retroceder, mover, -70).
+comando(saltar, saltar, 80).
+comando(saludar, saludar, 4).
+comando(bailar, bailar, 6).
+comando(mirar, girar_cabeza, 30).
+comando(parpadear, parpadear, 3).
+comando(escanear, escanear, 3).
+comando(encender_nucleo, nucleo, 1).
+comando(apagar_nucleo, nucleo, 0).
+comando(dormir, dormir, 1).
+comando(despertar, dormir, 0).
+
+% HECHOS: sinonimos
+sinonimo(adelante, avanzar).
+sinonimo(derecha, avanzar).
+sinonimo(atras, retroceder).
+sinonimo(izquierda, retroceder).
+sinonimo(brincar, saltar).
+sinonimo(hola, saludar).
+sinonimo(analizar, escanear).
+sinonimo(danza, bailar).
+
+% HECHOS: paso(Rutina, Orden, Comando)
+paso(rutina_demo, 1, saludar).
+paso(rutina_demo, 2, avanzar).
+paso(rutina_demo, 3, escanear).
+paso(rutina_demo, 4, bailar).
+paso(rutina_demo, 5, saltar).
+paso(rutina_demo, 6, retroceder).
+paso(rutina_apagado, 1, apagar_nucleo).
+paso(rutina_apagado, 2, dormir).
+paso(rutina_inicio, 1, despertar).
+paso(rutina_inicio, 2, encender_nucleo).
+paso(rutina_inicio, 3, saludar).
+
+% REGLAS
+ejecutar(C, A, P) :- comando(C, A, P).
+ejecutar(C, A, P) :- sinonimo(C, Real), comando(Real, A, P).
+es_rutina(R) :- paso(R, 1, _).
+`;
+const $=id=>document.getElementById(id);
+let session=null,queue=Promise.resolve(),x=0,sleeping=false;
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const anim=(el,kf,o)=>el.animate(kf,Object.assign({fill:'none',easing:'ease-in-out'},o)).finished;
+const val=t=>t.id!==undefined?t.id:t.value;
+function log(t,c){const d=document.createElement('div');d.className=c||'';d.textContent=t;$('log').appendChild(d);$('log').scrollTop=1e9;}
+
+/* Intérprete mínimo de Prolog: hechos, reglas, unificación y backtracking */
+const Prolog=(()=>{
+  let uid=0;
+  const tok=s=>s.replace(/%.*$/gm,'').match(/:-|[a-z][A-Za-z0-9_]*|[A-Z_][A-Za-z0-9_]*|-?\d+|[(),.]/g)||[];
+  function parse(text,isQuery){
+    const t=tok(text);let i=0;
+    const need=c=>{if(t[i++]!==c)throw new Error('Se esperaba «'+c+'» cerca de «'+(t[i-1]||'fin')+'»');};
+    function term(){
+      const w=t[i++];
+      if(w===undefined||/^[(),.]$|^:-$/.test(w))throw new Error('Término inválido cerca de «'+(w||'fin')+'»');
+      if(/^[A-Z_]/.test(w))return {v:w==='_'?'_'+(uid++):w};
+      const a=[];
+      if(t[i]==='('){i++;a.push(term());while(t[i]===','){i++;a.push(term());}need(')');}
+      return {f:w,a};
+    }
+    function goals(){const g=[term()];while(t[i]===','){i++;g.push(term());}return g;}
+    if(isQuery){const g=goals();need('.');return g;}
+    const db=[];
+    while(i<t.length){const head=term();let body=[];if(t[i]===':-'){i++;body=goals();}need('.');db.push({head,body});}
+    return db;
+  }
+  const walk=(x,s)=>{while(x.v!==undefined&&s[x.v]!==undefined)x=s[x.v];return x;};
+  function unify(a,b,s){
+    a=walk(a,s);b=walk(b,s);
+    if(a.v!==undefined){if(b.v===a.v)return s;return Object.assign({},s,{[a.v]:b});}
+    if(b.v!==undefined)return Object.assign({},s,{[b.v]:a});
+    if(a.f!==b.f||a.a.length!==b.a.length)return null;
+    for(let k=0;k<a.a.length;k++){s=unify(a.a[k],b.a[k],s);if(!s)return null;}
+    return s;
+  }
+  const ren=(x,id)=>x.v!==undefined?{v:x.v+'#'+id}:{f:x.f,a:x.a.map(y=>ren(y,id))};
+  const deep=(x,s)=>{x=walk(x,s);return x.v!==undefined?x:{f:x.f,a:x.a.map(y=>deep(y,s))};};
+  function* solve(db,gs,s,st){
+    if(!gs.length){yield s;return;}
+    if(++st.n>20000)throw new Error('Demasiados pasos de inferencia');
+    const g=gs[0],rest=gs.slice(1);
+    for(const c of db){
+      if(c.head.f!==g.f||c.head.a.length!==g.a.length)continue;
+      const id=++uid,h=ren(c.head,id),s2=unify(g,h,s);
+      if(s2)yield* solve(db,c.body.map(b=>ren(b,id)).concat(rest),s2,st);
+    }
+  }
+  return {
+    consult:text=>parse(text,false),
+    query(db,text){
+      const g=parse(text,true),vars=[];
+      (function f(x){if(x.v!==undefined){if(!/^_/.test(x.v)&&!vars.includes(x.v))vars.push(x.v);}else x.a.forEach(f);})({f:'q',a:g});
+      const out=[];
+      for(const s of solve(db,g,{},{n:0}))out.push(Object.fromEntries(vars.map(v=>[v,deep({v},s)])));
+      return out;
+    }
+  };
+})();
+function cargar(){
+  try{session=Prolog.consult($('prog').value);log('Programa cargado: '+session.length+' cláusulas.','ok');return Promise.resolve(true);}
+  catch(e){session=null;log('Error de Prolog: '+e.message,'no');return Promise.resolve(false);}
+}
+function solveAll(goal){
+  try{
+    const out=Prolog.query(session,goal).map(sol=>({lookup:k=>{const t=sol[k];return /^-?\d+$/.test(t.f)?{value:Number(t.f)}:{id:t.f};}}));
+    return Promise.resolve({out});
+  }catch(e){log('Error: '+e.message,'no');return Promise.resolve({out:[]});}
+}
+const ok=s=>/^[a-z][a-z0-9_]*$/.test(s);
+
+async function construirBotones(){
+  $('btns').innerHTML='';
+  const r=await solveAll('comando(N,_,_).');
+  r.out.forEach(a=>{const n=val(a.lookup('N'));const b=document.createElement('button');b.textContent=n;b.onclick=()=>lanzar(n);$('btns').appendChild(b);});
+  const rr=await solveAll('es_rutina(R).');
+  rr.out.forEach(a=>{const n=val(a.lookup('R'));const b=document.createElement('button');b.textContent='Rutina: '+n.replace('rutina_','');b.className='p';b.onclick=()=>lanzar(n);$('btns').appendChild(b);});
+}
+
+async function resolver(t){
+  if(!ok(t)){log('"'+t+'" no es un átomo válido.','no');return [];}
+  log('?- ejecutar('+t+', A, P).','q');
+  const r=await solveAll('ejecutar('+t+', A, P).');
+  if(r.out.length){const A=val(r.out[0].lookup('A')),P=val(r.out[0].lookup('P'));log('   A = '+A+', P = '+P,'ok');return [{A,P}];}
+  log('?- paso('+t+', N, C).','q');
+  const s=await solveAll('paso('+t+', N, C).');
+  if(!s.out.length){log('   false. No reconozco «'+t+'».','no');return [];}
+  const pasos=s.out.map(a=>({n:val(a.lookup('N')),c:val(a.lookup('C'))})).sort((p,q)=>p.n-q.n);
+  log('   Rutina de '+pasos.length+' pasos: '+pasos.map(p=>p.c).join(' > '),'ok');
+  let acc=[];for(const p of pasos)acc=acc.concat(await resolver(p.c));return acc;
+}
+function lanzar(texto){
+  queue=queue.then(async()=>{
+    if(!session){log('Programa no cargado.','no');return;}
+    for(const t of texto.toLowerCase().split(/[\s,;]+/).filter(Boolean))
+      for(const a of await resolver(t))await animar(a.A,a.P);
+  });
+}
+
+const R=()=>$('robot');
+const eyeGlow=v=>{$('eyeGlowL').style.opacity=v;$('eyeGlowR').style.opacity=v;};
+async function animar(A,P){
+  if(sleeping&&A!=='dormir'){log('   (la unidad está en reposo: usa despertar)','no');return;}
+  const max=($('stage').clientWidth-220)/2;
+  switch(A){
+    case 'mover':{
+      const nx=Math.max(-max,Math.min(max,x+P)),d=nx>=x?1:-1;
+      R().style.transition='transform .7s ease-in-out';R().style.transform='translateX('+nx+'px)';x=nx;
+      const sw=(el,a)=>anim($(el),[{transform:'rotate(0)'},{transform:'rotate('+a+'deg)'},{transform:'rotate('+(-a)+'deg)'},{transform:'rotate(0)'}],{duration:700});
+      sw('legL',22*d);sw('legR',-22*d);sw('armL',-16*d);sw('armR',-16*d);
+      await wait(720);break;}
+    case 'saltar':{
+      const f=$('figure');
+      anim($('legL'),[{transform:'scaleY(1)'},{transform:'scaleY(.85)'},{transform:'scaleY(1)'},{transform:'scaleY(1)'},{transform:'scaleY(.9)'},{transform:'scaleY(1)'}],{duration:800});
+      anim($('legR'),[{transform:'scaleY(1)'},{transform:'scaleY(.85)'},{transform:'scaleY(1)'},{transform:'scaleY(1)'},{transform:'scaleY(.9)'},{transform:'scaleY(1)'}],{duration:800});
+      await anim(f,[{transform:'translateY(0)'},{transform:'translateY(8px)',offset:.15},{transform:'translateY('+(-P)+'px)',offset:.5},{transform:'translateY(0)'}],{duration:800,easing:'cubic-bezier(.3,.6,.4,1)'});break;}
+    case 'saludar':{
+      const f=[];for(let i=0;i<P;i++)f.push({transform:'rotate(-150deg)'},{transform:'rotate(-115deg)'});
+      await anim($('armR'),[{transform:'rotate(0)'},...f,{transform:'rotate(0)'}],{duration:260*P+500});break;}
+    case 'bailar':{
+      const f=[];for(let i=0;i<P;i++)f.push({transform:'rotate(-7deg)'},{transform:'rotate(7deg)'});
+      anim($('armL'),[{transform:'rotate(0)'},{transform:'rotate(140deg)'},{transform:'rotate(50deg)'},{transform:'rotate(140deg)'},{transform:'rotate(0)'}],{duration:320*P});
+      anim($('armR'),[{transform:'rotate(0)'},{transform:'rotate(-50deg)'},{transform:'rotate(-140deg)'},{transform:'rotate(-50deg)'},{transform:'rotate(0)'}],{duration:320*P});
+      anim($('head'),[{transform:'rotate(0)'},...f.map(k=>({transform:'rotate('+(parseFloat(k.transform.slice(7))*-1.2)+'deg)'})),{transform:'rotate(0)'}],{duration:320*P});
+      await anim($('body'),[{transform:'rotate(0)'},...f,{transform:'rotate(0)'}],{duration:320*P});break;}
+    case 'girar_cabeza':
+      await anim($('head'),[{transform:'rotate(0)'},{transform:'rotate('+P+'deg)'},{transform:'rotate('+(-P)+'deg)'},{transform:'rotate(0)'}],{duration:1100});break;
+    case 'parpadear':{
+      const f=[];for(let i=0;i<P;i++)f.push({transform:'scaleY(.1)'},{transform:'scaleY(1)'});
+      await anim($('eyes'),f,{duration:260*P});break;}
+    case 'escanear':{
+      eyeGlow(1);
+      anim($('coreG'),[{transform:'scale(1)',filter:'brightness(1)'},{transform:'scale(1.12)',filter:'brightness(1.6)'},{transform:'scale(1)',filter:'brightness(1)'}],{duration:500,iterations:P});
+      await anim($('head'),[{transform:'rotate(0)'},{transform:'rotate(-14deg)'},{transform:'rotate(14deg)'},{transform:'rotate(0)'}],{duration:500*P});
+      eyeGlow(0);break;}
+    case 'nucleo':
+      $('coreG').style.opacity=P?1:.18;$('coreG').style.filter=P?'none':'grayscale(.7)';await wait(350);break;
+    case 'dormir':{
+      sleeping=!!P;$('eyes').style.transform=P?'scaleY(.1)':'scaleY(1)';
+      $('head').style.transition='transform .6s';$('head').style.transform=P?'rotate(10deg) translateY(4px)':'rotate(0)';
+      $('coreG').style.opacity=P?.35:1;
+      const z=$('zzz');z.style.left='calc(50% + '+(x+40)+'px)';
+      if(P)z.animate([{opacity:0,transform:'translateY(14px)'},{opacity:1,transform:'translateY(-6px)'}],{duration:1200,fill:'forwards'});
+      else{z.getAnimations().forEach(a=>a.cancel());z.style.opacity=0;}
+      await wait(650);break;}
+    default:log('   La acción «'+A+'» no tiene animación.','no');
+  }
+}
+
+$('go').onclick=()=>{const v=$('cmd').value.trim();if(v){lanzar(v);$('cmd').value='';}};
+$('cmd').addEventListener('keydown',e=>{if(e.key==='Enter')$('go').click();});
+$('reload').onclick=async()=>{if(await cargar())construirBotones();};
+$('reset').onclick=async()=>{$('prog').value=PROGRAMA;if(await cargar())construirBotones();};
+$('prog').value=PROGRAMA;
+window.addEventListener('load',async()=>{if(await cargar())construirBotones();});
+</script>
+</body>
+</html>
